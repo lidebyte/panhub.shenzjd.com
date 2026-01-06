@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <!-- 英雄区域 -->
+    <!-- 英雄区域 - 紧凑版 -->
     <header class="hero">
       <div class="hero-content">
         <div class="brand-badge">
@@ -9,8 +9,7 @@
         </div>
         <h1 class="hero-title">全网最全的网盘搜索工具</h1>
         <p class="hero-description">
-          聚合阿里云盘、夸克、百度网盘、115、迅雷等平台<br />
-          实时检索各类分享链接与资源，免费、快速、无广告
+          聚合阿里云盘、夸克、百度网盘、115、迅雷等平台，实时检索各类分享链接与资源
         </p>
       </div>
     </header>
@@ -298,16 +297,16 @@ function visibleSorted(items: any[]) {
   gap: 24px;
 }
 
-/* 英雄区域 - 玻璃拟态卡片 */
+/* 英雄区域 - 紧凑版 */
 .hero {
   background: var(--bg-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-xl);
-  padding: 32px;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 20px;
   text-align: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
 }
@@ -318,9 +317,9 @@ function visibleSorted(items: any[]) {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--success));
-  opacity: 0.6;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  opacity: 0.5;
 }
 
 .hero-content {
@@ -331,17 +330,17 @@ function visibleSorted(items: any[]) {
 .brand-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(99, 102, 241, 0.1);
-  padding: 6px 16px;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 4px 12px;
   border-radius: 999px;
-  margin-bottom: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  margin-bottom: 10px;
+  border: 1px solid rgba(99, 102, 241, 0.15);
 }
 
 .brand-emoji {
-  font-size: 20px;
-  filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3));
+  font-size: 16px;
+  filter: drop-shadow(0 1px 2px rgba(99, 102, 241, 0.2));
 }
 
 .brand-name {
@@ -350,22 +349,24 @@ function visibleSorted(items: any[]) {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .hero-title {
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0 0 12px 0;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
   color: var(--text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
 }
 
 .hero-description {
-  font-size: 15px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.5;
+  opacity: 0.9;
 }
 
 /* 统计和过滤器栏 */
@@ -601,16 +602,16 @@ function visibleSorted(items: any[]) {
 /* 移动端优化 */
 @media (max-width: 640px) {
   .hero {
-    padding: 24px 16px;
-    border-radius: var(--radius-lg);
+    padding: 16px 12px;
+    border-radius: var(--radius-md);
   }
 
   .hero-title {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .hero-description {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .stats-bar {
@@ -668,13 +669,13 @@ function visibleSorted(items: any[]) {
 /* 深色模式支持 */
 @media (prefers-color-scheme: dark) {
   .hero {
-    background: rgba(15, 23, 42, 0.7);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   .brand-badge {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.2);
   }
 
   .stat-item {
