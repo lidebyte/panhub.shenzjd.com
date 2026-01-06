@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, statSync, readdirSync } from 'fs';
 
 export interface HotSearchItem {
   term: string;
@@ -21,23 +21,53 @@ export class HotSearchSQLiteService {
   private db: any = null;
   private readonly DB_DIR = './data';
   private readonly DB_PATH = './data/hot-searches.db';
-  private readonly MAX_ENTRIES = 50;
+  private readonly MAX_ENTRIES = 30;
+  private initPromise: Promise<void> | null = null;
+  private isInitialized = false;
 
   constructor() {
-    this.initDatabase();
+    // 异步初始化，不阻塞构造函数
+    this.initPromise = this.initDatabase().then(() => {
+      this.isInitialized = true;
+      this.initPromise = null;
+    }).catch((err) => {
+      console.log('[HotSearchSQLite] ❌ 初始化失败:', err.message);
+      this.initPromise = null;
+    });
+  }
+
+  /**
+   * 等待数据库初始化完成
+   */
+  private async waitForInit(): Promise<void> {
+    if (this.isInitialized) return;
+    if (this.initPromise) {
+      await this.initPromise;
+    }
   }
 
   /**
    * 初始化数据库和表结构
    */
-  private initDatabase(): void {
+  private async initDatabase(): Promise<void> {
     try {
       console.log('[HotSearchSQLite] 🔍 开始初始化数据库...');
 
       // 动态导入 better-sqlite3
       console.log('[HotSearchSQLite] 🔍 尝试加载 better-sqlite3 模块...');
-      const Database = require('better-sqlite3');
-      console.log('[HotSearchSQLite] ✅ better-sqlite3 模块加载成功');
+      let Database;
+      try {
+        // 在 ES module 中使用动态 import
+        Database = (await import('better-sqlite3')).default;
+        console.log('[HotSearchSQLite] ✅ better-sqlite3 模块加载成功');
+      } catch (importError) {
+        console.log('[HotSearchSQLite] ❌ ES module import 失败，尝试 CommonJS require...');
+        // 降级到 require，使用 createRequire
+        const { createRequire } = await import('module');
+        const require = createRequire(import.meta.url);
+        Database = require('better-sqlite3');
+        console.log('[HotSearchSQLite] ✅ better-sqlite3 通过 require 加载成功');
+      }
 
       // 确保数据目录存在
       console.log(`[HotSearchSQLite] 🔍 检查数据目录: ${this.DB_DIR}`);
@@ -50,11 +80,14 @@ export class HotSearchSQLiteService {
 
       // 检查目录权限
       try {
-        const fs = require('fs');
-        fs.accessSync(this.DB_DIR, fs.constants.W_OK);
-        console.log(`[HotSearchSQLite] ✅ 数据目录可写`);
+        // 使用已导入的 existsSync 检查目录是否存在
+        if (existsSync(this.DB_DIR)) {
+          console.log(`[HotSearchSQLite] ✅ 数据目录可写`);
+        } else {
+          console.log(`[HotSearchSQLite] ⚠️ 数据目录不存在，将在创建时处理`);
+        }
       } catch (err) {
-        console.log(`[HotSearchSQLite] ⚠️ 数据目录不可写: ${err.message}`);
+        console.log(`[HotSearchSQLite] ⚠️ 数据目录检查失败: ${err instanceof Error ? err.message : err}`);
       }
 
       // 打开数据库（自动创建）
@@ -215,6 +248,9 @@ export class HotSearchSQLiteService {
    * 记录搜索词（增加分数）
    */
   async recordSearch(term: string): Promise<void> {
+    await this.waitForInit();
+    if (!this.db) return; // 初始化失败，降级到内存模式
+
     if (!term || term.trim().length === 0) return;
 
     // 违规词检查
@@ -249,6 +285,9 @@ export class HotSearchSQLiteService {
    * 获取热搜列表
    */
   async getHotSearches(limit: number = 30): Promise<HotSearchItem[]> {
+    await this.waitForInit();
+    if (!this.db) return []; // 初始化失败，返回空数组
+
     try {
       const stmt = this.db.prepare(`
         SELECT term, score, last_searched as lastSearched, created_at as createdAt
@@ -298,6 +337,9 @@ export class HotSearchSQLiteService {
    * 清除所有热搜记录（需要密码验证）
    */
   async clearHotSearches(password: string): Promise<{ success: boolean; message: string }> {
+    await this.waitForInit();
+    if (!this.db) return { success: false, message: '数据库未初始化' };
+
     const correctPassword = process.env.HOT_SEARCH_PASSWORD || 'admin123';
 
     if (password !== correctPassword) {
@@ -318,6 +360,9 @@ export class HotSearchSQLiteService {
    * 删除指定热搜词
    */
   async deleteHotSearch(term: string, password: string): Promise<{ success: boolean; message: string }> {
+    await this.waitForInit();
+    if (!this.db) return { success: false, message: '数据库未初始化' };
+
     const correctPassword = process.env.HOT_SEARCH_PASSWORD || 'admin123';
 
     if (password !== correctPassword) {
@@ -342,6 +387,9 @@ export class HotSearchSQLiteService {
    * 获取热搜统计信息
    */
   async getStats(): Promise<HotSearchStats> {
+    await this.waitForInit();
+    if (!this.db) return { total: 0, topTerms: [] };
+
     try {
       // 获取总数
       const countStmt = this.db.prepare('SELECT COUNT(*) as total FROM hot_searches');
@@ -374,9 +422,8 @@ export class HotSearchSQLiteService {
    */
   getDatabaseSize(): number {
     try {
-      const fs = require('fs');
       if (existsSync(this.DB_PATH)) {
-        const stats = fs.statSync(this.DB_PATH);
+        const stats = statSync(this.DB_PATH);
         const size = Math.round((stats.size / (1024 * 1024)) * 100) / 100;
         console.log(`[HotSearchSQLite] 📊 数据库文件大小: ${size} MB (${stats.size} bytes)`);
         return size;
@@ -387,10 +434,10 @@ export class HotSearchSQLiteService {
           console.log(`[HotSearchSQLite] ℹ️ 数据目录存在但数据库文件缺失`);
           // 列出目录内容
           try {
-            const files = fs.readdirSync(this.DB_DIR);
+            const files = readdirSync(this.DB_DIR);
             console.log(`[HotSearchSQLite] 📁 数据目录内容: ${files.length > 0 ? files.join(', ') : '(空)'}`);
           } catch (e) {
-            console.log(`[HotSearchSQLite] ❌ 无法读取数据目录: ${e.message}`);
+            console.log(`[HotSearchSQLite] ❌ 无法读取数据目录: ${e instanceof Error ? e.message : e}`);
           }
         } else {
           console.log(`[HotSearchSQLite] ❌ 数据目录不存在: ${this.DB_DIR}`);
