@@ -9,29 +9,26 @@
         <span>加载中...</span>
       </div>
 
-      <!-- 分类行列表 -->
+      <!-- 分类行列表 - 紧凑布局 -->
       <template v-else>
         <div
           v-for="category in categorizedData"
           :key="category.key"
-          class="category-row"
+          class="category-row compact"
         >
           <div class="category-header">
             <span class="category-icon">{{ category.icon }}</span>
             <span class="category-label">{{ category.label }}</span>
           </div>
 
-          <div class="searches-list">
+          <div class="searches-tags">
             <button
-              v-for="(item, index) in category.items"
-              :key="item.term + index"
-              class="search-item"
-              :class="{ 'top-3': index < 3 }"
+              v-for="item in category.items"
+              :key="item.term"
+              class="tag-item"
               @click="onSearchClick(item.term)"
             >
-              <span class="rank" :class="getRankClass(index)">{{ index + 1 }}</span>
-              <span class="term">{{ item.term }}</span>
-              <span class="score" v-if="item.score > 1">🔥 {{ item.score }}</span>
+              {{ item.term }}
             </button>
           </div>
         </div>
@@ -204,14 +201,6 @@ async function fetchHotSearches() {
   }
 }
 
-// 获取排名样式
-function getRankClass(index: number): string {
-  if (index === 0) return 'rank-first';
-  if (index === 1) return 'rank-second';
-  if (index === 2) return 'rank-third';
-  return '';
-}
-
 // 点击搜索词
 function onSearchClick(term: string) {
   props.onSearch(term);
@@ -246,114 +235,69 @@ onMounted(() => {
 .categories-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
-/* 每行分类卡片 */
-.category-row {
+/* 分类行 - 水平紧凑布局 */
+.category-row.compact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
   animation: fadeIn 0.4s ease;
+  flex-wrap: wrap;
 }
 
-/* 分类头部 */
+/* 分类头部 - 紧凑 */
 .category-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 6px;
+  padding: 4px 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
 }
 
 .category-icon {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .category-label {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-/* 热搜列表 */
-.searches-list {
+/* 标签式热搜词 - 简化样式 */
+.searches-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
+  flex: 1;
 }
 
-.search-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+.tag-item {
+  padding: 6px 10px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-primary);
-  text-align: left;
   white-space: nowrap;
-  flex: 1;
-  min-width: 120px;
-  max-width: calc(33.333% - 8px);
-}
-
-.search-item:hover {
-  background: var(--bg-primary);
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-}
-
-/* 前 3 名特殊样式 */
-.search-item.top-3 {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-.rank {
-  font-weight: 700;
-  font-size: 14px;
-  width: 20px;
   text-align: center;
 }
 
-.rank-first {
-  color: #f59e0b; /* 金牌 */
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-}
-
-.rank-second {
-  color: #94a3b8; /* 银牌 */
-  text-shadow: 0 0 8px rgba(148, 163, 184, 0.4);
-}
-
-.rank-third {
-  color: #cd7f32; /* 铜牌 */
-  text-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
-}
-
-.term {
-  flex: 1;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.score {
-  font-size: 11px;
-  color: #ef4444;
-  font-weight: 600;
-  background: rgba(239, 68, 68, 0.1);
-  padding: 2px 6px;
-  border-radius: 999px;
+.tag-item:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
 }
 
 /* 加载状态 */
@@ -419,52 +363,51 @@ onMounted(() => {
     font-size: 18px;
   }
 
-  .category-row {
-    padding: 12px;
+  .category-row.compact {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
   }
 
-  .search-item {
-    min-width: 100px;
-    max-width: calc(50% - 8px);
-    font-size: 12px;
-    padding: 6px 10px;
+  .category-header {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 6px;
+    width: 100%;
   }
 
-  .rank {
-    width: 16px;
-    font-size: 12px;
+  .searches-tags {
+    width: 100%;
   }
 
-  .score {
-    font-size: 10px;
-    padding: 1px 4px;
+  .tag-item {
+    padding: 5px 8px;
+    font-size: 11px;
   }
 }
 
 /* 深色模式 */
 @media (prefers-color-scheme: dark) {
-  .category-row {
-    border-color: rgba(255, 255, 255, 0.1);
+  .category-row.compact {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
-  .search-item {
+  .tag-item {
     background: rgba(30, 41, 59, 0.5);
     border-color: rgba(100, 116, 139, 0.3);
   }
 
-  .search-item:hover {
+  .tag-item:hover {
     background: rgba(15, 23, 42, 0.7);
-  }
-
-  .search-item.top-3 {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
   }
 }
 
 /* 减少动画模式 */
 @media (prefers-reduced-motion: reduce) {
-  .category-row,
-  .search-item {
+  .category-row.compact,
+  .tag-item {
     animation: none;
     transition: none;
   }
@@ -474,7 +417,7 @@ onMounted(() => {
     opacity: 0.7;
   }
 
-  .search-item:hover {
+  .tag-item:hover {
     transform: none;
   }
 }
