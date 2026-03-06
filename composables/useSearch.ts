@@ -144,7 +144,7 @@ export function useSearch() {
     setDeepLoading(true);
 
     // 继续执行深度搜索
-    const mySeq = ++searchSeq;
+    // mySeq 由外部传入，避免重复递增
     try {
       await performDeepSearch(options, mySeq);
     } catch (error) {
@@ -198,7 +198,7 @@ export function useSearch() {
 
 
   // 并发搜索 - 每个源独立请求
-  async function performParallelSearch(options: SearchOptions): Promise<void> {
+  async function performParallelSearch(options: SearchOptions, mySeq: number): Promise<void> {
     const { apiBase, keyword, settings } = options;
     const conc = Math.min(16, Math.max(1, Number(settings.concurrency || 3)));
 
@@ -258,29 +258,38 @@ export function useSearch() {
 
     // 执行所有搜索任务，每个任务完成后立即更新页面
     let currentMerged: MergedLinks = {};
-    const mySeq = ++searchSeq;
+    // mySeq 由外部传入，避免重复递增
 
     const limitedTasks = searchTasks.map((task) => limit(task));
+    
+    console.log('[performParallelSearch] 开始执行', searchTasks.length, '个搜索任务');
 
     for (const task of limitedTasks) {
-      if (mySeq !== searchSeq) break; // 新搜索已开始
+      if (mySeq !== searchSeq) {
+        console.log('[performParallelSearch] 新搜索已开始，停止当前搜索');
+        break;
+      }
 
       try {
         const result = await task();
+        console.log('[performParallelSearch] 任务完成，结果类型数:', Object.keys(result).length);
+        
         if (Object.keys(result).length > 0) {
           currentMerged = mergeMergedByType(currentMerged, result);
           setMerged(currentMerged);
-          setTotal(
-            Object.values(currentMerged).reduce(
-              (sum, arr) => sum + (arr?.length || 0),
-              0
-            )
+          const total = Object.values(currentMerged).reduce(
+            (sum, arr) => sum + (arr?.length || 0),
+            0
           );
+          setTotal(total);
+          console.log('[performParallelSearch] 当前聚合总数:', total);
         }
       } catch (error) {
-        console.error('Search task error:', error);
+        console.error('[performParallelSearch] 任务错误:', error);
       }
     }
+    
+    console.log('[performParallelSearch] 所有任务完成');
   }
 
   // 快速搜索（第一批）- 实时更新版本
@@ -508,12 +517,12 @@ export function useSearch() {
     setMerged({});
     setDeepLoading(false);
 
-    const mySeq = ++searchSeq;
+    // mySeq 由外部传入，避免重复递增
     const start = performance.now();
 
     try {
       // 并行搜索 - 每个源独立请求，实时更新
-      await performParallelSearch(options);
+      await performParallelSearch(options, mySeq);
       
       if (mySeq !== searchSeq) return;
     } catch (error: any) {
