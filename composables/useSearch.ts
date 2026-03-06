@@ -13,28 +13,8 @@ export interface SearchOptions {
   };
 }
 
-export interface SearchState {
-  loading: boolean;
-  deepLoading: boolean;
-  paused: boolean;
-  error: string;
-  searched: boolean;
-  elapsedMs: number;
-  total: number;
-  merged: MergedLinks;
-}
-
 export function useSearch() {
-  const state = ref<SearchState>({
-    loading: false,
-    deepLoading: false,
-    paused: false,
-    error: "",
-    searched: false,
-    elapsedMs: 0,
-    total: 0,
-    merged: {},
-  });
+  const searchStore = useSearchStore();
 
   let searchSeq = 0;
   const activeControllers: AbortController[] = [];
@@ -52,7 +32,7 @@ export function useSearch() {
   // 暂停搜索
   function pauseSearch(): void {
     if (searchStore.loading || searchStore.deepLoading) {
-      searchStore.paused = true;
+      searchStore.setPaused(true);
       // 取消当前的请求，但保留已获取的结果
       cancelActiveRequests();
     }
@@ -62,8 +42,8 @@ export function useSearch() {
   async function continueSearch(options: SearchOptions): Promise<void> {
     if (!searchStore.paused || !searchStore.searched) return;
 
-    searchStore.paused = false;
-    searchStore.deepLoading = true;
+    searchStore.setPaused(false);
+    searchStore.setDeepLoading(true);
 
     // 继续执行深度搜索
     const mySeq = ++searchSeq;
@@ -72,7 +52,7 @@ export function useSearch() {
     } catch (error) {
       // 忽略错误
     } finally {
-      searchStore.deepLoading = false;
+      searchStore.setDeepLoading(false);
     }
   }
 
@@ -264,16 +244,17 @@ export function useSearch() {
         for (const r of resps) {
           if (!r || mySeq !== searchSeq) continue;
           if (r.merged_by_type) {
-            searchStore.merged = mergeMergedByType(
-              searchStore.merged,
-              r.merged_by_type
-            );
+            searchStore.updateMerged({
+              [Object.keys(r.merged_by_type)[0]]: r.merged_by_type[Object.keys(r.merged_by_type)[0]]
+            });
           }
         }
         // 更新总数
-        searchStore.total = Object.values(searchStore.merged).reduce(
-          (sum, arr) => sum + (arr?.length || 0),
-          0
+        searchStore.setTotal(
+          Object.values(searchStore.merged).reduce(
+            (sum, arr) => sum + (arr?.length || 0),
+            0
+          )
         );
       } catch (error) {
         // 单批失败忽略
@@ -287,7 +268,7 @@ export function useSearch() {
 
     // 验证
     if (!keyword || keyword.trim().length === 0) {
-      searchStore.error = "请输入搜索关键词";
+      searchStore.setError("请输入搜索关键词");
       return;
     }
 
@@ -299,7 +280,7 @@ export function useSearch() {
       (settings.enabledTgChannels?.length || 0) === 0 &&
       enabledPlugins.length === 0
     ) {
-      searchStore.error = "请先在设置中选择至少一个搜索来源";
+      searchStore.setError("请先在设置中选择至少一个搜索来源");
       return;
     }
 
@@ -313,13 +294,13 @@ export function useSearch() {
     }
 
     // 重置状态
-    searchStore.loading = true;
-    searchStore.error = "";
-    searchStore.searched = true;
-    searchStore.elapsedMs = 0;
-    searchStore.total = 0;
-    searchStore.merged = {};
-    searchStore.deepLoading = false;
+    searchStore.setLoading(true);
+    searchStore.setError("");
+    searchStore.setSearched(true);
+    searchStore.setElapsedMs(0);
+    searchStore.setTotal(0);
+    searchStore.setMerged({});
+    searchStore.setDeepLoading(false);
 
     const mySeq = ++searchSeq;
     const start = performance.now();
@@ -329,26 +310,28 @@ export function useSearch() {
       const fastMerged = await performFastSearch(options);
       if (mySeq !== searchSeq) return;
 
-      searchStore.merged = fastMerged;
-      searchStore.total = Object.values(fastMerged).reduce(
-        (sum, arr) => sum + (arr?.length || 0),
-        0
+      searchStore.setMerged(fastMerged);
+      searchStore.setTotal(
+        Object.values(fastMerged).reduce(
+          (sum, arr) => sum + (arr?.length || 0),
+          0
+        )
       );
 
       // 2) 深度搜索
-      searchStore.deepLoading = true;
+      searchStore.setDeepLoading(true);
       await performDeepSearch(options, mySeq);
       // 如果暂停了，停止后续操作
       if (searchStore.paused) return;
     } catch (error: any) {
-      searchStore.error = error?.data?.message || error?.message || "请求失败";
+      searchStore.setError(error?.data?.message || error?.message || "请求失败");
     } finally {
-      searchStore.elapsedMs = Math.round(performance.now() - start);
+      searchStore.setElapsedMs(Math.round(performance.now() - start));
       // 如果暂停了，保持 loading 状态，只取消 deepLoading
       if (!searchStore.paused) {
-        searchStore.loading = false;
+        searchStore.setLoading(false);
       }
-      searchStore.deepLoading = false;
+      searchStore.setDeepLoading(false);
     }
   }
 
@@ -356,16 +339,7 @@ export function useSearch() {
   function resetSearch(): void {
     cancelActiveRequests();
     searchSeq++;
-    state.value = {
-      loading: false,
-      deepLoading: false,
-      paused: false,
-      error: "",
-      searched: false,
-      elapsedMs: 0,
-      total: 0,
-      merged: {},
-    };
+    searchStore.reset();
   }
 
   // 复制链接
@@ -378,7 +352,7 @@ export function useSearch() {
   }
 
   return {
-    state: readonly(state),
+    searchStore,
     performSearch,
     resetSearch,
     copyLink,
