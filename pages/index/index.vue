@@ -97,7 +97,7 @@
     </section>
 
     <!-- 空状态 -->
-    <section v-else-if="searchState.searched && !searchState.loading" class="empty-state">
+    <section v-else-if="searchState.searched && !searchState.loading && !searchState.deepLoading" class="empty-state">
       <div class="empty-card">
         <div class="empty-icon">🔍</div>
         <h3>未找到相关资源</h3>
