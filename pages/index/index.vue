@@ -111,13 +111,13 @@
       <span>{{ searchState.error }}</span>
     </section>
 
-    <!-- 豆瓣热搜 - 影视热榜 -->
-    <section class="douban-hot-section">
+    <!-- 豆瓣电影新片榜 - 搜索时隐藏 -->
+    <section v-if="!searchState.searched" class="douban-hot-section">
       <DoubanHotSection ref="doubanHotRef" :on-search="quickSearch" />
     </section>
 
-    <!-- 热门搜索 - 用户搜索历史 -->
-    <section class="hot-search-section">
+    <!-- 热门搜索 - 用户搜索历史，搜索时隐藏 -->
+    <section v-if="!searchState.searched" class="hot-search-section">
       <HotSearchSection ref="hotSearchRef" :on-search="quickSearch" />
     </section>
   </div>
