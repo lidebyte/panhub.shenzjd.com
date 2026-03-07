@@ -96,8 +96,8 @@
       </div>
     </section>
 
-    <!-- 空状态 -->
-    <section v-else-if="searchState.searched && !searchState.loading" class="empty-state">
+    <!-- 空状态：仅当搜索完全结束且无结果时显示，搜索进行中不显示 -->
+    <section v-else-if="searchState.searched && !searchState.loading && !searchState.deepLoading && !searchState.paused" class="empty-state">
       <div class="empty-card">
         <div class="empty-icon">🔍</div>
         <h3>未找到相关资源</h3>
@@ -120,9 +120,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import SearchBox from "./SearchBox.vue";
-import ResultGroup from "./ResultGroup.vue";
-import HotSearchSection from "./HotSearchSection.vue";
 import { PLATFORM_INFO } from "~/config/plugins";
 
 const config = useRuntimeConfig();
@@ -197,11 +194,19 @@ const filterPlatform = ref<string>("all");
 const initialVisible = 3;
 const expandedSet = ref<Set<string>>(new Set());
 
-// 使用新的搜索 composable
-const { state: searchState, performSearch, resetSearch, copyLink, pauseSearch, continueSearch } = useSearch();
-const { settings } = useSettings();
+// 使用搜索 composable
+const {
+  state: searchState,
+  performSearch,
+  resetSearch,
+  copyLink,
+  pauseSearch,
+  continueSearch,
+  hasResults,
+} = useSearch();
+const { settings, loadSettings } = useSettings();
 
-// 获取搜索选项
+// 获取搜索选项（使用最新的用户设置）
 function getSearchOptions() {
   return {
     apiBase,
@@ -215,11 +220,25 @@ function getSearchOptions() {
   };
 }
 
+// 记录热搜词并刷新展示
+async function recordHotSearch(keyword: string) {
+  const term = keyword?.trim();
+  if (!term) return;
+  try {
+    await $fetch(`${apiBase}/hot-searches`, { method: "POST", body: { term } });
+    hotSearchRef.value?.refresh();
+  } catch (_e) {}
+}
+
 // 搜索执行
 async function onSearch() {
-  if (!kw.value || searchState.value.loading) return;
+  if (!kw.value || searchState.loading) return;
 
-  // 执行搜索（内部会记录热搜词）
+  loadSettings();
+
+  const keyword = kw.value.trim();
+  recordHotSearch(keyword); // 并行：记录热搜不阻塞搜索
+
   await performSearch(getSearchOptions());
 }
 
@@ -231,7 +250,8 @@ async function quickSearch(keyword: string) {
 
 // 继续搜索（从暂停处继续）
 async function handleContinueSearch() {
-  if (!searchState.value.paused) return;
+  if (!searchState.paused) return;
+  loadSettings();
   await continueSearch(getSearchOptions());
 }
 
@@ -241,18 +261,21 @@ async function fullReset() {
   resetSearch();
   // 重置时刷新热搜数据
   if (hotSearchRef.value) {
-    await hotSearchRef.value.refresh();
+    hotSearchRef.value.refresh();
   }
 }
 
 // 平台信息
+const platformIcon = (t: string): string => PLATFORM_INFO[t]?.icon || "📦";
 const platformName = (t: string): string => PLATFORM_INFO[t]?.name || t;
 const platformColor = (t: string): string => PLATFORM_INFO[t]?.color || "#9ca3af";
-const platformIcon = (t: string): string => PLATFORM_INFO[t]?.icon || "📦";
 
-// 计算属性
-const platforms = computed(() => Object.keys(searchState.value.merged));
-const hasResults = computed(() => platforms.value.length > 0);
+// 获取所有有结果的平台类型
+const platforms = computed(() => {
+  return Object.keys(searchState.value.merged).filter(
+    type => searchState.value.merged[type]?.length > 0
+  );
+});
 
 const groupedResults = computed(() => {
   const list: Array<{ type: string; items: any[] }> = [];

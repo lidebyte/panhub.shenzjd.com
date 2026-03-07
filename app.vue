@@ -62,7 +62,6 @@
 </template>
 
 <script setup lang="ts">
-import SettingsDrawer from "./pages/index/SettingsDrawer.vue";
 import { ALL_PLUGIN_NAMES } from "./config/plugins";
 import channelsConfig from "~/config/channels.json";
 
