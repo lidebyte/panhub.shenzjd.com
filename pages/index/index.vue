@@ -291,11 +291,13 @@ async function handleContinueSearch() {
   });
 }
 
-// 完全重置 - 清空输入框、结果、状态
+// 完全重置 - 清空输入框、结果、状态，并刷新页面
 async function fullReset() {
+  // 清空输入框和重置状态
   kw.value = "";
   resetSearch();
-  await nextTick();
+  // 刷新页面以恢复初始状态（包括豆瓣电影）
+  window.location.reload();
 }
 
 // 平台信息
