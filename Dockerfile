@@ -5,6 +5,9 @@ WORKDIR /app
 # 启用 Corepack 并使用 pnpm（与项目一致）
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
+# 安装 native 模块编译工具（better-sqlite3 需要）
+RUN apk add --no-cache python3 make g++
+
 # 先复制依赖文件，利用层缓存
 COPY package.json pnpm-lock.yaml ./
 
