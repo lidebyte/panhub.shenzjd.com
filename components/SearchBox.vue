@@ -23,8 +23,8 @@
           @input="
             $emit('update:modelValue', ($event.target as HTMLInputElement).value)
           "
-          @focus="isFocused = true"
-          @blur="isFocused = false"
+          @focus="isFocused = true; showHistory = true"
+          @blur="isFocused = false; setTimeout(() => showHistory = false, 200)"
           @keyup.enter="handleSearch"
           @touchstart="handleTouchStart"
           @touchend="handleTouchEnd" />
@@ -130,11 +130,28 @@
           </div>
         </div>
       </div>
+
+      <!-- 搜索历史 -->
+      <div v-if="showHistory && !loading && history.length > 0 && !modelValue" class="search-history">
+        <div class="search-history__title">最近搜索</div>
+        <div
+          v-for="term in history.slice(0, 5)"
+          :key="term"
+          class="search-history__item"
+          @mousedown.prevent="onSelectHistory(term)">
+          <span class="search-history__term">{{ term }}</span>
+          <span class="search-history__remove" @mousedown.prevent.stop="removeHistory(term)">×</span>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { useSearchHistory } from "~/composables/useSearchHistory";
+const { history, loadHistory, removeHistory } = useSearchHistory();
+const showHistory = ref(false);
+
 const props = defineProps<{
   modelValue: string;
   loading: boolean;
@@ -147,6 +164,12 @@ const emit = defineEmits(["update:modelValue", "search", "reset", "pause", "cont
 const isFocused = ref(false);
 const inputEl = ref<HTMLInputElement | null>(null);
 const touchStartTime = ref(0);
+
+function onSelectHistory(term: string) {
+  showHistory.value = false;
+  emit("update:modelValue", term);
+  emit("search");
+}
 
 // 处理搜索按钮点击
 function handleSearch() {
@@ -179,6 +202,7 @@ function handleTouchEnd() {
 }
 
 onMounted(() => {
+  loadHistory();
   // 仅在桌面端自动聚焦，避免移动端抢焦点和键盘闪烁
   if (window.matchMedia("(pointer: fine)").matches) {
     requestAnimationFrame(() => {
@@ -289,6 +313,52 @@ onMounted(() => {
 .search-input::placeholder {
   color: var(--text-tertiary);
   font-weight: 400;
+}
+
+/* 搜索历史 */
+.search-history {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+  padding: 8px 0;
+  margin-top: 4px;
+}
+
+.search-history__title {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 4px 16px 8px;
+  font-weight: 600;
+}
+
+.search-history__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.search-history__item:hover {
+  background: var(--bg-hover);
+}
+
+.search-history__remove {
+  color: var(--text-tertiary);
+  font-size: 16px;
+  padding: 0 4px;
+}
+
+.search-history__remove:hover {
+  color: var(--error);
 }
 
 /* 操作按钮区域 */
