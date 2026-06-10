@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, sendError, createError } from "h3";
 import { requireSearchAuth } from "../utils/requireAuth";
 import { getOrCreateSearchService } from "../core/services";
 import { loggers } from "../core/utils/logger";
+import { logSearchOnce } from "../utils/searchLog";
 import type { GenericResponse, SearchRequest } from "../core/types/models";
 
 function parseList(val: string | undefined): string[] | undefined {
@@ -74,7 +75,7 @@ export default defineEventHandler(async (event) => {
     req.ext || {}
   );
 
-  loggers.api.info(`搜索: "${kw}"`, {
+  logSearchOnce(kw, {
     src: req.src,
     channels: req.channels?.length || 0,
     plugins: req.plugins?.length || 0,
