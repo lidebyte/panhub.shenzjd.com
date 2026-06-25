@@ -3,7 +3,7 @@ import { fetchDoubanHotByCategory } from "../core/services/doubanHotService";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const category = (query.category as string) || "douban-movie";
+  const category = (query.category as string) || "douban-top250";
   const rawPage = parseInt((query.page as string) || "1", 10);
   const rawLimit = parseInt((query.limit as string) || "25", 10);
   const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;

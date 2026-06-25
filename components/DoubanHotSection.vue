@@ -137,13 +137,23 @@ const loadTriggerRef = ref<HTMLElement | null>(null);
 // 防止快速切换分类时旧响应覆盖新数据
 let fetchSeq = 0;
 
-// 所有可用的分类配置
+// 所有可用的分类配置（与 config/doubanHot.ts 同步）
 const availableCategories = computed(() => {
   return [
     { id: "douban-top250", label: "电影", type: "Top250" },
-    { id: "douban-movie", label: "电影", type: "新片榜" },
-    { id: "douban-weekly", label: "电影", type: "口碑榜" },
-    { id: "douban-us-box", label: "电影", type: "北美票房" },
+    { id: "douban-drama", label: "电影", type: "剧情" },
+    { id: "douban-comedy", label: "电影", type: "喜剧" },
+    { id: "douban-action", label: "电影", type: "动作" },
+    { id: "douban-romance", label: "电影", type: "爱情" },
+    { id: "douban-scifi", label: "电影", type: "科幻" },
+    { id: "douban-animation", label: "电影", type: "动画" },
+    { id: "douban-mystery", label: "电影", type: "悬疑" },
+    { id: "douban-crime", label: "电影", type: "犯罪" },
+    { id: "douban-adventure", label: "电影", type: "冒险" },
+    { id: "douban-war", label: "电影", type: "战争" },
+    { id: "douban-history", label: "电影", type: "历史" },
+    { id: "douban-documentary", label: "电影", type: "纪录片" },
+    { id: "douban-tv", label: "电视剧", type: "热门" },
   ];
 });
 
