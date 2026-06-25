@@ -49,8 +49,8 @@ const allItemsCache = new MemoryCache<DoubanHotItem[]>({ maxSize: 30 });
 
 /** 将豆瓣 API 返回的 item 转为 DoubanHotItem */
 function mapItem(raw: DoubanApiItem, index: number): DoubanHotItem {
-  const score = raw.score || raw.rating?.[0] || "0";
-  const title = `【${score}】${raw.title}`;
+  const score = raw.score || raw.rating?.[0] || "";
+  const title = score ? `${score} ${raw.title}` : raw.title;
   const desc = [raw.types?.join("/"), raw.regions?.join("/")]
     .filter(Boolean)
     .join(" · ");
@@ -170,7 +170,7 @@ async function fetchAllItems(categoryId: string): Promise<DoubanHotItem[]> {
 }
 
 export function extractSearchTerm(title: string): string {
-  return title.replace(/^【[\d.]+】/, "").trim() || title;
+  return title.replace(/^[\d.]+\s+/, "").trim() || title;
 }
 
 /** 分页获取指定分类的数据 */
