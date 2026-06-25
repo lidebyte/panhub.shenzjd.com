@@ -21,7 +21,6 @@ function getClientAbortSignal(event: any): AbortSignal | undefined {
 }
 import { requireSearchAuth } from "../utils/requireAuth";
 import { getOrCreateSearchService } from "../core/services";
-import { logSearchOnce } from "../utils/searchLog";
 import type { GenericResponse, SearchRequest } from "../core/types/models";
 
 export default defineEventHandler(async (event) => {
@@ -74,16 +73,6 @@ export default defineEventHandler(async (event) => {
     body.ext || {},
     signal
   );
-
-  logSearchOnce(kw, {
-    src: body.src,
-    channels: body.channels?.length || 0,
-    plugins: body.plugins?.length || 0,
-    results: result?.merged_by_type
-      ? Object.values(result.merged_by_type).reduce((sum: number, v: any) => sum + (v.links?.length || 0), 0)
-      : 0,
-    warnings: warnings.length,
-  });
 
   const resp: GenericResponse<typeof result> = {
     code: 0,
