@@ -41,6 +41,14 @@
       @pause="pauseSearch"
       @continue="handleContinueSearch" />
 
+    <!-- 链接检测助手安装提示（页面加载即显示，直到用户主动关闭） -->
+    <div v-if="showCheckerTip" class="checker-tip">
+      <span class="checker-tip__icon">💡</span>
+      <span class="checker-tip__text">安装<strong>链接检测助手</strong>油猴脚本，自动标记失效链接</span>
+      <a href="/panhub-link-checker.user.js" class="checker-tip__btn">一键安装</a>
+      <button class="checker-tip__close" @click="dismissCheckerTip" aria-label="关闭">✕</button>
+    </div>
+
     <!-- 统计和过滤器 -->
     <div v-if="searched" class="stats-bar">
       <div class="stats-content">
@@ -90,14 +98,6 @@
           </select>
         </div>
       </div>
-    </div>
-
-    <!-- 链接检测助手安装提示 -->
-    <div v-if="hasResults && showCheckerTip" class="checker-tip">
-      <span class="checker-tip__icon">💡</span>
-      <span class="checker-tip__text">安装<strong>链接检测助手</strong>油猴脚本，自动标记失效链接</span>
-      <a href="/panhub-link-checker.user.js" class="checker-tip__btn">一键安装</a>
-      <button class="checker-tip__close" @click="dismissCheckerTip" aria-label="关闭">✕</button>
     </div>
 
     <!-- 搜索结果 -->
@@ -282,9 +282,9 @@ function dismissCheckerTip() {
     localStorage.setItem(CHECKER_TIP_KEY, "1");
   } catch {}
 }
-// 首次搜索后检查（延迟等结果加载完毕）
-watch(hasResults, (v) => {
-  if (v) setTimeout(checkCheckerTip, 2000);
+// 页面加载后立即检查（脚本注入有延迟，等 1 秒再检测）
+onMounted(() => {
+  setTimeout(checkCheckerTip, 1000);
 });
 const requestUnlock = inject<(onSuccess?: () => void) => void>("requestUnlock");
 
@@ -1065,14 +1065,14 @@ function visibleSorted(items: any[]) {
   align-items: center;
   gap: 10px;
   max-width: 820px;
-  margin: 0 auto 16px;
-  padding: 10px 16px;
-  background: var(--bg-surface, rgba(255, 255, 255, 0.7));
-  border: 1px solid var(--border-light, #e5e7eb);
+  margin: 12px auto 16px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08) 0%, rgba(245, 158, 11, 0.06) 100%);
+  border: 1px solid rgba(15, 118, 110, 0.2);
   border-radius: var(--radius-md, 12px);
-  font-size: 13px;
-  color: var(--text-secondary, #4b5563);
-  animation: tipFadeIn 0.3s ease;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+  animation: tipFadeIn 0.4s ease;
 }
 .checker-tip__icon {
   font-size: 16px;
