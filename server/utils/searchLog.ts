@@ -1,7 +1,7 @@
 import { loggers } from "../core/utils/logger";
 
-/** 同一关键词在此时间窗口内只打印一次日志 */
-const DEDUP_WINDOW_MS = 3000;
+/** 同一关键词在此时间窗口内只打印一次日志（60s 覆盖整个搜索周期） */
+const DEDUP_WINDOW_MS = 60000;
 
 const recentSearches = new Map<string, number>();
 
